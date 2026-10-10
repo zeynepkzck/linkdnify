@@ -29,7 +29,7 @@ npm run dev                  # http://localhost:3000
 ## Yayına alma (Vercel)
 
 1. Repoyu Vercel'e bağla (Framework: Next.js, ek ayar gerekmez).
-2. Environment Variables: `ANTHROPIC_API_KEY` (zorunlu), `CLAUDE_MODEL` (isteğe bağlı, varsayılan `claude-opus-5-5`).
+2. Environment Variables: `ANTHROPIC_API_KEY` (zorunlu), `CLAUDE_MODEL` (isteğe bağlı, varsayılan `claude-haiku-5-5`; daha iyi metin için `claude-sonnet-5-5`).
 3. Deploy.
 
 Yüklenen dosyalar saklanmaz; yalnızca okuma isteğinde Claude'a gönderilir.

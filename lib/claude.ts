@@ -1,13 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-export const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
+/** Haiku 5.5 is the cheapest current model and handles reading certificates and short posts well. */
+export const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 
-/** Server-side fallback when the model declines; routed by refusal category. */
-export function withFallback() {
-  return {
-    betas: ["server-side-fallback-2026-07-01"] as Anthropic.Beta.AnthropicBeta[],
-    fallbacks: "default" as const,
-  };
+/** Models that accept the server-side `fallbacks: "default"` re-run when they decline a request. */
+const FALLBACK_MODELS = ["claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "claude-sonnet-5-5"];
+
+export function withFallback(): { betas?: Anthropic.Beta.AnthropicBeta[]; fallbacks?: "default" } {
+  if (!FALLBACK_MODELS.includes(MODEL)) return {};
+  return { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" };
 }
 
 let client: Anthropic | null = null;
