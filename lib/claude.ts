@@ -1,13 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-/** Haiku 5.5 is the cheapest current model and handles reading certificates and short posts well. */
-export const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
+/** Reading a certificate is simple extraction, so the cheapest model is enough. */
+export const EXTRACT_MODEL = process.env.CLAUDE_EXTRACT_MODEL || "claude-haiku-5-5";
+/** The post is what visitors see, so it gets the stronger writer. */
+export const WRITER_MODEL = process.env.CLAUDE_WRITER_MODEL || "claude-sonnet-5-5";
 
 /** Models that accept the server-side `fallbacks: "default"` re-run when they decline a request. */
 const FALLBACK_MODELS = ["claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "claude-sonnet-5-5"];
 
-export function withFallback(): { betas?: Anthropic.Beta.AnthropicBeta[]; fallbacks?: "default" } {
-  if (!FALLBACK_MODELS.includes(MODEL)) return {};
+export function withFallback(model: string): { betas?: Anthropic.Beta.AnthropicBeta[]; fallbacks?: "default" } {
+  if (!FALLBACK_MODELS.includes(model)) return {};
   return { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" };
 }
 

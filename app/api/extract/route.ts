@@ -1,6 +1,6 @@
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { NextResponse } from "next/server";
-import { describeError, getClient, withFallback, MODEL } from "@/lib/claude";
+import { describeError, getClient, withFallback, EXTRACT_MODEL } from "@/lib/claude";
 import { EXTRACT_PROMPT } from "@/lib/prompt";
 import { clientIp, rateLimit } from "@/lib/rateLimit";
 import { ExtractedSchema } from "@/lib/types";
@@ -41,9 +41,9 @@ export async function POST(req: Request) {
 
   try {
     const response = await client.beta.messages.parse({
-      model: MODEL,
+      model: EXTRACT_MODEL,
       max_tokens: 4000,
-      ...withFallback(),
+      ...withFallback(EXTRACT_MODEL),
       output_config: { effort: "low", format: betaZodOutputFormat(ExtractedSchema) },
       messages: [{ role: "user", content: [source, { type: "text", text: EXTRACT_PROMPT }] }],
     });

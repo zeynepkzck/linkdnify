@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { describeError, getClient, withFallback, MODEL } from "@/lib/claude";
+import { describeError, getClient, withFallback, WRITER_MODEL } from "@/lib/claude";
 import { buildWriterPrompt, WRITER_SYSTEM } from "@/lib/prompt";
 import { clientIp, rateLimit } from "@/lib/rateLimit";
 import { GenerateRequestSchema } from "@/lib/types";
@@ -23,9 +23,9 @@ export async function POST(req: Request) {
 
   const stream = client.beta.messages.stream(
     {
-      model: MODEL,
+      model: WRITER_MODEL,
       max_tokens: 8000,
-      ...withFallback(),
+      ...withFallback(WRITER_MODEL),
       output_config: { effort: "medium" },
       system: WRITER_SYSTEM,
       messages: [{ role: "user", content: buildWriterPrompt(parsed.data) }],
