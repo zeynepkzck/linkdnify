@@ -52,12 +52,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Bu dosyadan bilgi okunamadı. Alanları elle doldurabilirsin." }, { status: 422 });
     }
     const out = response.parsed_output;
-    if (!out.isCertificate) {
-      return NextResponse.json({ error: "Bu bir sertifika gibi görünmüyor. Başka bir dosya dene ya da alanları elle doldur." }, { status: 422 });
+    if (!out.isAchievementDocument) {
+      return NextResponse.json({ error: "Bu bir sertifika ya da başarı belgesi gibi görünmüyor." }, { status: 422 });
     }
     return NextResponse.json({
-      name: out.name,
-      issuer: out.issuer,
+      kind: out.kind,
+      title: out.title,
+      org: out.org,
       date: out.issueYear ? `${out.issueYear}-${String(out.issueMonth ?? 1).padStart(2, "0")}` : "",
       certId: out.credentialId ?? "",
       url: out.credentialUrl && /^https?:\/\//i.test(out.credentialUrl) ? out.credentialUrl : "",

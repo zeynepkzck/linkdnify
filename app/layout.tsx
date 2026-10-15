@@ -7,12 +7,12 @@ const body = IBM_Plex_Sans({ subsets: ["latin", "latin-ext"], weight: ["400", "5
 const mono = IBM_Plex_Mono({ subsets: ["latin", "latin-ext"], weight: ["400", "500"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Linkdnify · Sertifikandan LinkedIn paylaşımı",
+  title: "Linkdnify · Başarından LinkedIn paylaşımı",
   description:
-    "Sertifikanı yükle, birkaç cümleyle hikâyeni anlat; LinkedIn'e hazır, sana ait gibi duran bir paylaşım metni al ve tek tıkla paylaş.",
+    "Sertifika, yeni iş, terfi, mezuniyet ya da ödül: başarını anlat, LinkedIn'e hazır, sana ait gibi duran bir paylaşım metni al ve tek tıkla paylaş.",
   openGraph: {
     title: "Linkdnify",
-    description: "Sertifikandan saniyeler içinde LinkedIn paylaşımı.",
+    description: "Başarından saniyeler içinde LinkedIn paylaşımı.",
     locale: "tr_TR",
     type: "website",
   },

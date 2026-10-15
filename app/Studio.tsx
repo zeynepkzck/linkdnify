@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addToProfileUrl, FOLD, MAX_CHARS, reviewPost, shareUrl } from "@/lib/linkedin";
+import { KIND_SPECS, KINDS, type Kind } from "@/lib/kinds";
 import { templatePost } from "@/lib/template";
 import type { EmojiLevel, GenerateRequest, Lang, Tone } from "@/lib/types";
 
 type Fields = {
-  name: string;
-  issuer: string;
+  title: string;
+  org: string;
   date: string;
   url: string;
   certId: string;
@@ -18,8 +19,8 @@ type Fields = {
 };
 
 const EXAMPLE: Fields = {
-  name: "Google Data Analytics Professional Certificate",
-  issuer: "Google · Coursera",
+  title: "Google Data Analytics Professional Certificate",
+  org: "Google · Coursera",
   date: "2026-09",
   url: "https://coursera.org/verify/professional-cert/EXAMPLE123",
   certId: "EXAMPLE123",
@@ -44,6 +45,9 @@ const EMOJIS: [EmojiLevel, string][] = [
   ["some", "Ölçülü"],
   ["none", "Hiç"],
 ];
+
+const EMPTY: Fields = { title: "", org: "", date: "", url: "", certId: "", skills: "", why: "", learned: "", thanks: "" };
+const KIND_OPTIONS = KINDS.map((k) => [k, KIND_SPECS[k].label] as [Kind, string]);
 
 const ACCEPT = "image/png,image/jpeg,image/webp,application/pdf";
 
@@ -70,7 +74,9 @@ function Chips<T extends string>({
 }
 
 export default function Studio() {
+  const [kind, setKind] = useState<Kind>("cert");
   const [f, setF] = useState<Fields>(EXAMPLE);
+  const spec = KIND_SPECS[kind];
   const [tone, setTone] = useState<Tone>("pro");
   const [lang, setLang] = useState<Lang>("tr");
   const [emoji, setEmoji] = useState<EmojiLevel>("some");
@@ -82,7 +88,7 @@ export default function Studio() {
   const [reading, setReading] = useState(false);
   const [readMsg, setReadMsg] = useState<{ text: string; err?: boolean } | null>(null);
 
-  const [post, setPost] = useState(() => templatePost(toRequest(EXAMPLE, "pro", "tr", "some", 3)));
+  const [post, setPost] = useState(() => templatePost(toRequest("cert", EXAMPLE, "pro", "tr", "some", 3)));
   const [isExample, setIsExample] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [writing, setWriting] = useState(false);
@@ -95,6 +101,23 @@ export default function Studio() {
 
   const set = (k: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setF((prev) => ({ ...prev, [k]: e.target.value }));
+
+  function chooseKind(next: Kind) {
+    if (next === kind) return;
+    setKind(next);
+    if (!KIND_SPECS[next].document) {
+      setFile(null);
+      setPreview(null);
+      setReadMsg(null);
+    }
+    // Leave the visitor's own entries alone; only clear the untouched example.
+    if (isExample) {
+      setF(EMPTY);
+      setPost("");
+      setGenMsg(null);
+      setIsExample(false);
+    }
+  }
 
   const review = useMemo(() => reviewPost(post, Boolean(f.why.trim() || f.learned.trim())), [post, f.why, f.learned]);
 
@@ -110,22 +133,23 @@ export default function Studio() {
     }
     setFile(next);
     setPreview(next.type.startsWith("image/") ? URL.createObjectURL(next) : null);
-    await readCertificate(next);
+    await readDocument(next);
   }
 
-  async function readCertificate(target: File) {
+  async function readDocument(target: File) {
     setReading(true);
-    setReadMsg({ text: "Sertifika okunuyor…" });
+    setReadMsg({ text: "Belge okunuyor…" });
     try {
       const body = new FormData();
       body.append("file", target);
       const res = await fetch("/api/extract", { method: "POST", body });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "Sertifika okunamadı.");
+      if (!res.ok) throw new Error(data.error || "Belge okunamadı.");
+      if (data.kind && KINDS.includes(data.kind)) setKind(data.kind);
       setF((prev) => ({
         ...prev,
-        name: data.name || "",
-        issuer: data.issuer || "",
+        title: data.title || "",
+        org: data.org || "",
         date: data.date || "",
         url: data.url || "",
         certId: data.certId || "",
@@ -141,11 +165,11 @@ export default function Studio() {
   }
 
   async function generate() {
-    if (!f.name.trim()) {
-      setGenMsg({ text: "Önce sertifika adını yaz.", err: true });
+    if (!f.title.trim()) {
+      setGenMsg({ text: `Önce "${spec.title.label}" alanını doldur.`, err: true });
       return;
     }
-    const req = toRequest(f, tone, lang, emoji, hashtags);
+    const req = toRequest(kind, f, tone, lang, emoji, hashtags);
     setIsExample(false);
     setExpanded(false);
     setWriting(true);
@@ -199,68 +223,78 @@ export default function Studio() {
     }
   }
 
-  const firstComment = (lang === "en" ? "Credential: " : "Sertifika doğrulama: ") + f.url.trim();
+  const firstComment =
+    (kind === "cert" ? (lang === "en" ? "Credential: " : "Sertifika doğrulama: ") : lang === "en" ? "Link: " : "Link: ") +
+    f.url.trim();
+  const showUrl = kind !== "job" && kind !== "promotion";
   const folded = !expanded && post.length > FOLD;
 
   return (
     <div className="grid">
       <section className="panel" aria-labelledby="h-in">
-        <h2 id="h-in">1 · Sertifika</h2>
+        <h2 id="h-in">1 · Ne paylaşıyorsun?</h2>
         <div className="step">
-          <label
-            className={`drop${over ? " over" : ""}`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setOver(true);
-            }}
-            onDragLeave={() => setOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setOver(false);
-              chooseFile(e.dataTransfer.files[0]);
-            }}
-          >
-            <div className="thumb">
-              {preview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img alt="Yüklenen sertifika" src={preview} />
-              ) : file ? (
-                <div className="file-pill">PDF</div>
-              ) : (
-                <div className="seal">✓</div>
-              )}
-            </div>
-            <div className="drop-text">
-              <b>{file ? file.name : "Sertifikanı sürükle ya da seç"}</b>
-              <small>PNG, JPG, WebP ya da PDF, en fazla 8 MB. Bilgiler otomatik okunur.</small>
-            </div>
-            <input type="file" accept={ACCEPT} onChange={(e) => chooseFile(e.target.files?.[0])} disabled={reading} />
-          </label>
+          <Chips label="Başarı türü" options={KIND_OPTIONS} value={kind} onChange={chooseKind} />
+          {spec.document && (
+            <label
+              className={`drop${over ? " over" : ""}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setOver(true);
+              }}
+              onDragLeave={() => setOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setOver(false);
+                chooseFile(e.dataTransfer.files[0]);
+              }}
+            >
+              <div className="thumb">
+                {preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img alt="Yüklenen belge" src={preview} />
+                ) : file ? (
+                  <div className="file-pill">PDF</div>
+                ) : (
+                  <div className="seal">✓</div>
+                )}
+              </div>
+              <div className="drop-text">
+                <b>{file ? file.name : "Belgeni yükle (isteğe bağlı)"}</b>
+                <small>Sertifika, diploma ya da ödül belgesi. PNG, JPG, WebP ya da PDF, en fazla 8 MB. Bilgiler otomatik okunur.</small>
+              </div>
+              <input type="file" accept={ACCEPT} onChange={(e) => chooseFile(e.target.files?.[0])} disabled={reading} />
+            </label>
+          )}
           {readMsg && <p className={`status${readMsg.err ? " err" : ""}`}>{readMsg.text}</p>}
           <div className="fields">
             <label className="f full">
-              Sertifika adı
-              <input type="text" value={f.name} onChange={set("name")} maxLength={200} />
+              {spec.title.label}
+              <input type="text" value={f.title} onChange={set("title")} placeholder={spec.title.placeholder} maxLength={200} />
             </label>
             <label className="f">
-              Veren kurum
-              <input type="text" value={f.issuer} onChange={set("issuer")} maxLength={200} />
+              {spec.org.label}
+              <input type="text" value={f.org} onChange={set("org")} placeholder={spec.org.placeholder} maxLength={200} />
             </label>
             <label className="f">
               Tarih
               <input type="month" value={f.date} onChange={set("date")} />
             </label>
-            <label className="f">
-              Doğrulama linki
-              <input type="url" value={f.url} onChange={set("url")} placeholder="https://" />
-            </label>
-            <label className="f">
-              Sertifika no
-              <input type="text" value={f.certId} onChange={set("certId")} />
-            </label>
+            {showUrl && (
+              <label className={`f${kind === "cert" ? "" : " full"}`}>
+                {kind === "cert" ? "Doğrulama linki" : "İlgili link (isteğe bağlı)"}
+                <input type="url" value={f.url} onChange={set("url")} placeholder="https://" />
+              </label>
+            )}
+            {kind === "cert" && (
+              <label className="f">
+                Sertifika no
+                <input type="text" value={f.certId} onChange={set("certId")} />
+              </label>
+            )}
             <label className="f full">
-              Öne çıkan beceriler (virgülle)
-              <input type="text" value={f.skills} onChange={set("skills")} />
+              {spec.skills.label}
+              <input type="text" value={f.skills} onChange={set("skills")} placeholder={spec.skills.placeholder} />
             </label>
           </div>
         </div>
@@ -269,15 +303,15 @@ export default function Studio() {
           <h2>2 · Senin hikâyen</h2>
           <p className="hint">Metni şablondan ayıran kısım burası. Bir iki samimi cümle yeter.</p>
           <label className="f">
-            Neden aldın, seni ne motive etti?
+            {spec.why}
             <textarea rows={3} value={f.why} onChange={set("why")} maxLength={600} />
           </label>
           <label className="f">
-            Ne öğrendin ya da ne yaptın? (proje, zor bir an, somut bir sonuç)
+            {spec.learned}
             <textarea rows={3} value={f.learned} onChange={set("learned")} maxLength={800} />
           </label>
           <label className="f">
-            Teşekkür etmek istediğin biri var mı?
+            {spec.thanks}
             <input type="text" value={f.thanks} onChange={set("thanks")} maxLength={200} />
           </label>
         </div>
@@ -308,7 +342,7 @@ export default function Studio() {
           </div>
           <div className="row">
             <button className="btn primary" type="button" onClick={generate} disabled={writing}>
-              {isExample ? "Metni oluştur" : "Yeniden oluştur"}
+              {isExample || !post ? "Metni oluştur" : "Yeniden oluştur"}
             </button>
             {writing && (
               <button className="btn" type="button" onClick={() => abortRef.current?.abort()}>
@@ -332,7 +366,9 @@ export default function Studio() {
             {isExample && <span className="badge">ÖRNEK</span>}
           </div>
           <div className="post-body">
-            {folded ? (
+            {!post ? (
+              <span className="hint">Bilgileri doldurup &quot;Metni oluştur&quot;a bas; gönderin burada görünecek.</span>
+            ) : folded ? (
               <>
                 <span className="fold">{post.slice(0, FOLD).trimEnd()}</span>…{" "}
                 <button className="more" type="button" onClick={() => setExpanded(true)}>
@@ -346,17 +382,19 @@ export default function Studio() {
               </>
             )}
           </div>
-          <div className="post-img">
-            {preview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img alt="Sertifika görseli" src={preview} />
-            ) : (
-              <div className="ph">
-                <div className="seal">✓</div>
-                {file ? "PDF sertifikanı paylaşırken ekle" : "Sertifika görselin burada görünecek"}
-              </div>
-            )}
-          </div>
+          {(spec.document || preview) && (
+            <div className="post-img">
+              {preview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt="Belge görseli" src={preview} />
+              ) : (
+                <div className="ph">
+                  <div className="seal">✓</div>
+                  {file ? "PDF belgeni paylaşırken ekle" : "Belgenin görseli burada görünecek"}
+                </div>
+              )}
+            </div>
+          )}
           <div className="post-foot">
             <span>Beğen</span>
             <span>Yorum yap</span>
@@ -385,14 +423,14 @@ export default function Studio() {
           </div>
         </div>
 
-        <ul className="checks" aria-label="Kontrol listesi">
+        {post && <ul className="checks" aria-label="Kontrol listesi">
           {review.checks.map((c) => (
             <li key={c.text} className={c.level}>
               <span className="dot" />
               <span>{c.text}</span>
             </li>
           ))}
-        </ul>
+        </ul>}
 
         <div className="actions">
           <button className="btn" type="button" onClick={() => copy(post, "Metin kopyalandı.")}>
@@ -401,25 +439,27 @@ export default function Studio() {
           <a className="btn primary" href={shareUrl(post)} target="_blank" rel="noopener noreferrer">
             LinkedIn&apos;de paylaş
           </a>
-          <a
-            className="btn"
-            href={addToProfileUrl({ name: f.name, issuer: f.issuer, date: f.date, url: f.url.trim(), certId: f.certId })}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Profilime ekle
-          </a>
+          {kind === "cert" && (
+            <a
+              className="btn"
+              href={addToProfileUrl({ name: f.title, issuer: f.org, date: f.date, url: f.url.trim(), certId: f.certId })}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Profilime ekle
+            </a>
+          )}
         </div>
         {copyMsg && <p className="status">{copyMsg}</p>}
 
         <div className="callout">
           <div>
-            <b>Paylaşmadan önce:</b> LinkedIn metni hazır açar ama görseli ekleyemez. Açılan pencerede sertifikanı
-            kendin ekle, teşekkür ettiğin kişileri @ ile etiketle.
+            <b>Paylaşmadan önce:</b> LinkedIn metni hazır açar ama görsel ekleyemez. Bir görsel (belge, ekip fotoğrafı,
+            ekran görüntüsü) eklemek istersen açılan pencerede kendin ekle; teşekkür ettiğin kişileri @ ile etiketle.
           </div>
           {f.url.trim() && (
             <div>
-              <b>İlk yorum için:</b> Gövdedeki dış link erişimi düşürür; doğrulama linkini ilk yoruma yaz.
+              <b>İlk yorum için:</b> Gövdedeki dış link erişimi düşürür; linki ilk yoruma yaz.
               <div className="first-comment">
                 <code>{firstComment}</code>
                 <button className="small-btn" type="button" onClick={() => copy(firstComment, "İlk yorum metni kopyalandı.")}>
@@ -434,11 +474,12 @@ export default function Studio() {
   );
 }
 
-function toRequest(f: Fields, tone: Tone, lang: Lang, emoji: EmojiLevel, hashtags: number): GenerateRequest {
+function toRequest(kind: Kind, f: Fields, tone: Tone, lang: Lang, emoji: EmojiLevel, hashtags: number): GenerateRequest {
   return {
-    certificate: {
-      name: f.name.trim(),
-      issuer: f.issuer.trim(),
+    achievement: {
+      kind,
+      title: f.title.trim(),
+      org: f.org.trim(),
       date: f.date,
       skills: f.skills
         .split(",")

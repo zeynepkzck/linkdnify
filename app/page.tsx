@@ -8,15 +8,15 @@ export default function Home() {
           Linkdn<span>ify</span>
         </h1>
         <p className="tag">
-          Sertifikanı yükle, birkaç cümleyle hikâyeni anlat; LinkedIn&apos;e hazır, sana ait gibi duran bir paylaşım
-          metni al.
+          Sertifika, yeni iş, terfi, mezuniyet ya da ödül: başarını birkaç cümleyle anlat, LinkedIn&apos;e hazır ve sana
+          ait gibi duran bir paylaşım metni al.
         </p>
       </header>
 
       <ol className="howto">
         <li>
           <span>
-            <b>Sertifikanı yükle</b>Görsel ya da PDF. Ad, kurum ve tarih otomatik okunur.
+            <b>Başarını seç</b>Yeni iş, terfi, sertifika, mezuniyet… Belgen varsa yükle, bilgiler otomatik okunur.
           </span>
         </li>
         <li>
@@ -26,7 +26,7 @@ export default function Home() {
         </li>
         <li>
           <span>
-            <b>Paylaş</b>LinkedIn metin hazır açılır; sertifikayı profiline de tek tıkla ekle.
+            <b>Paylaş</b>LinkedIn metin hazır açılır; sertifikaları profiline de tek tıkla ekle.
           </span>
         </li>
       </ol>
@@ -35,7 +35,7 @@ export default function Home() {
 
       <footer className="foot">
         <p>
-          Yüklediğin dosya yalnızca bilgileri okumak için kullanılır, saklanmaz. Metinler yapay zekâ ile üretilir;
+          Yüklediğin belge yalnızca bilgileri okumak için kullanılır, saklanmaz. Metinler yapay zekâ ile üretilir;
           paylaşmadan önce oku ve düzenle.
         </p>
         <p>Linkdnify, LinkedIn ile bağlantılı değildir.</p>

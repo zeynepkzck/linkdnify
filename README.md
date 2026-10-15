@@ -1,8 +1,9 @@
 # Linkdnify
 
-Sertifikanı yükle, birkaç cümleyle hikâyeni anlat; LinkedIn'e hazır bir paylaşım metni al.
+Sertifika, yeni iş, terfi, mezuniyet, ödül, proje ya da konuşma: başarını birkaç cümleyle anlat, LinkedIn'e hazır bir paylaşım metni al.
 
-- Sertifika görseli ya da PDF'i Claude ile okunur (ad, kurum, tarih, doğrulama linki, beceriler).
+- Başarı türü seçilir; her türün kendi alanları ve soruları var (`lib/kinds.ts`).
+- Sertifika, diploma ya da ödül belgesi yüklenirse (isteğe bağlı) Claude ile okunur (ad, kurum, tarih, doğrulama linki, beceriler).
 - Kullanıcının kendi cümleleriyle, seçtiği ton ve dilde gönderi yazılır; LinkedIn akışındaki görünümü ve bir kontrol listesi gösterilir.
 - "LinkedIn'de paylaş" LinkedIn'i metin hazır açar (görseli kullanıcı ekler). "Profilime ekle" sertifikayı resmî Add to Profile linkiyle profile ekletir.
 - Yapay zekâ servisi yoksa metin hazır bir şablonla üretilir.
@@ -22,6 +23,7 @@ npm run dev                  # http://localhost:3000
 | `app/Studio.tsx` | Arayüz: yükleme, form, önizleme, paylaşım butonları |
 | `app/api/extract/route.ts` | Sertifikayı okur (görsel/PDF, en fazla 8 MB), yapılandırılmış JSON döner |
 | `app/api/generate/route.ts` | Gönderi metnini akış (stream) olarak üretir |
+| `lib/kinds.ts` | Başarı türleri: alan adları, sorular, türe özel yazım notları |
 | `lib/prompt.ts` | Yazım kuralları ve istemler |
 | `lib/linkedin.ts` | Paylaşım / profile ekleme linkleri, gönderi kontrolleri |
 | `lib/rateLimit.ts` | IP başına basit istek sınırı (tek sunucu için; trafik artınca Redis'e taşı) |
